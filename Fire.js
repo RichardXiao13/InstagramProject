@@ -1,0 +1,156 @@
+import FirebaseKeys from "./config";
+import { decode, encode } from "base-64";
+
+if (!global.btoa) {
+  global.btoa = encode;
+}
+
+if (!global.atob) {
+  global.atob = decode;
+}
+
+import firebase from "firebase";
+import "firebase/firestore";
+
+import { Alert } from "react-native";
+
+class Fire {
+  constructor() {
+    firebase.initializeApp(FirebaseKeys);
+  }
+
+  addPost = async ({ text, localUri }) => {
+    const timestamp = this.timestamp;
+    const remoteUri = await this.uploadPhotoAsync(
+      localUri,
+      `photos/${this.uid}/${timestamp}`
+    );
+
+    return new Promise((resolve, reject) => {
+      this.firestore
+        .collection("users")
+        .doc(this.uid)
+        .collection("posts")
+        .add({
+          text,
+          uid: this.uid,
+          timestamp: timestamp,
+          image: remoteUri
+        })
+        .then(reference => {
+          resolve(reference);
+        })
+        .catch(error => {
+          reject(error);
+        });
+    });
+  };
+
+  uploadPhotoAsync = async (uri, filename) => {
+    return new Promise(async (resolve, reject) => {
+      const response = await fetch(uri);
+      const file = await response.blob();
+
+      let upload = firebase
+        .storage()
+        .ref(filename)
+        .put(file);
+
+      upload.on(
+        "state_changed",
+        snapshot => {},
+        error => {
+          reject(error);
+        },
+        async () => {
+          const url = await upload.snapshot.ref.getDownloadURL();
+          resolve(url);
+        }
+      );
+    });
+  };
+
+  createUser = async user => {
+    try {
+      await firebase
+        .auth()
+        .createUserWithEmailAndPassword(user.email, user.password);
+
+      let db = this.firestore.collection("users").doc(this.uid);
+
+      db.set({
+        username: user.username,
+        email: user.email
+      });
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  updateProfile = user => {
+    let db = this.firestore.collection("users").doc(this.uid);
+
+    db.set({ ...user });
+  };
+
+  getUsername = async () => {
+    try {
+      const user = await this.firestore
+        .collection("users")
+        .doc(this.uid)
+        .get();
+      return user.data().username;
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  signOutUser = async () => {
+    Alert.alert(`Log out of ${await this.getUsername()}?`, "", [
+      {
+        text: "Cancel",
+        style: "cancel"
+      },
+      {
+        text: "Log Out",
+        onPress: async () => {
+          try {
+            await firebase.auth().signOut();
+          } catch (error) {
+            console.log(error);
+          }
+        }
+      }
+    ]);
+  };
+
+  sendMessage = async (recipient, message) => {
+    const user = this.firestore
+      .collection("users")
+      .doc(this.uid)
+      .collection("messages")
+      .doc(recipient);
+    try {
+      await user.update({
+        [this.timestamp]: message
+      });
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  get firestore() {
+    return firebase.firestore();
+  }
+
+  get uid() {
+    return (firebase.auth().currentUser || {}).uid;
+  }
+
+  get timestamp() {
+    return Date.now();
+  }
+}
+
+Fire.shared = new Fire();
+export default Fire;
