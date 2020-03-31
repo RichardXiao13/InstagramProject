@@ -124,16 +124,73 @@ class Fire {
     ]);
   };
 
-  sendMessage = async (recipient, message) => {
+  sendMessage = async (recipientUID, message) => {
     const user = this.firestore
       .collection("users")
       .doc(this.uid)
       .collection("messages")
-      .doc(recipient);
+      .doc(recipientUID);
     try {
-      await user.update({
-        [this.timestamp]: message
-      });
+      const userData = await user.get();
+      console.log(userData.exists);
+      if (userData.exists) {
+        await user.update({
+          [this.timestamp]: message
+        });
+      } else {
+        user.set({
+          [this.timestamp]: message
+        });
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  getMessages = async recipientUID => {
+    const user = this.firestore
+      .collection("users")
+      .doc(this.uid)
+      .collection("messages")
+      .doc(recipientUID);
+    const recipient = this.firestore
+      .collection("users")
+      .doc(recipientUID)
+      .collection("messages")
+      .doc(this.uid);
+    try {
+      const sortMessages = (userData, isCurrentUser) => {
+        let messages = [];
+        Object.keys(userData)
+          .sort()
+          .forEach(key => {
+            messages.push({
+              timestamp: parseInt(key),
+              message: userData[key],
+              thisUser: isCurrentUser
+            });
+          });
+        return messages;
+      };
+
+      let thisUserData = user.get();
+      let recipientData = recipient.get();
+      let messages = await Promise.all([thisUserData, recipientData]);
+      thisUserData = messages[0].data();
+      recipientData = messages[1].data();
+
+      if (!thisUserData && !recipientData) {
+        return;
+      } else if (!thisUserData) {
+        messages = sortMessages(recipientData, false);
+      } else if (!recipientData) {
+        messages = sortMessages(thisUserData, true);
+      } else {
+        messages = [...sortMessages(thisUserData, true), ...sortMessages(recipientData, false)];
+        messages.sort((a, b) => b.timestamp - a.timestamp);
+      }
+
+      return messages;
     } catch (error) {
       console.log(error);
     }
