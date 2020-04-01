@@ -27,7 +27,8 @@ export default class ProfileScreen extends React.Component {
     following: [],
     viewPostsIsFocused: true,
     modalVisible: false,
-    isRendered: false
+    isRendered: false,
+    isRefreshing: false
   };
 
   unsubscribeUser = null;
@@ -76,20 +77,26 @@ export default class ProfileScreen extends React.Component {
         .get();
 
       this.setState({
-        following: snapshot.docs.map(doc => doc.data()),
-        isRendered: true
+        following: snapshot.docs.map(doc => doc.data())
       });
     } catch (error) {
       console.log(error);
     }
   };
 
+  getInfo = async () => {
+    const posts = this.getPosts();
+    const followers = this.getFollowers();
+    const following = this.getFollowing();
+
+    await Promise.all([posts, followers, following]);
+    this.setState({ isRendered: true, isRefreshing: false });
+  };
+
   componentDidMount() {
     const user = this.props.uid || Fire.shared.uid;
 
-    this.getPosts();
-    this.getFollowers();
-    this.getFollowing();
+    this.getInfo();
 
     this.unsubscribeUser = Fire.shared.firestore
       .collection("users")
@@ -181,6 +188,11 @@ export default class ProfileScreen extends React.Component {
               keyExtractor={(item, index) => index.toString()}
               showsVerticalScrollIndicator={true}
               numColumns={3}
+              refreshing={this.state.isRefreshing}
+              onRefresh={() => {
+                this.setState({ isRefreshing: true });
+                this.getInfo();
+              }}
             />
           </View>
         );

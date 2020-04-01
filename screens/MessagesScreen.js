@@ -22,28 +22,64 @@ export default class MessagesScreen extends React.Component {
 
   getPeople = async () => {
     const user = Fire.shared.uid;
-    const people = await Fire.shared.firestore
-      .collection("users")
-      .doc(user)
-      .collection("messages")
-      .get();
-    const peopleData = people.docs.map(doc => doc.id);
+    try {
+      const snapshot = await Fire.shared.firestore
+        .collection("users")
+        .doc(user)
+        .collection("messages")
+        .get();
+      let peopleData = snapshot.docs.map(async doc => {
+        try {
+          const contact = await Fire.shared.firestore
+            .collection("users")
+            .doc(doc.id)
+            .get();
+
+          return { ...contact.data(), uid: doc.id };
+        } catch (error) {
+          console.log(error);
+        }
+      });
+
+      peopleData = await Promise.all(peopleData);
+
+      this.setState({ people: peopleData });
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   renderProfile = user => {
-    if (user) {
+    if (user && !this.state.possible.length) {
       return (
         <ListItem
           leftAvatar={{ source: { uri: user.avatar }, size: 60 }}
           rightIcon={
-            <SimpleLineIcons
-              name="camera"
-              size={26}
-              color="#999999"
-            ></SimpleLineIcons>
+            <TouchableOpacity style={{ paddingVertical: 8, paddingLeft: 8 }}>
+              <SimpleLineIcons
+                name="camera"
+                size={26}
+                color="#999999"
+              ></SimpleLineIcons>
+            </TouchableOpacity>
           }
           title={user.username}
           subtitle="Last Active"
+          subtitleStyle={{ color: "#A5A5A5" }}
+          activeOpacity={0.9}
+          onPress={() =>
+            this.props.navigation.navigate("messageUser", {
+              user: user
+            })
+          }
+        />
+      );
+    } else if (user) {
+      return (
+        <ListItem
+          leftAvatar={{ source: { uri: user.avatar }, size: 46 }}
+          title={user.username}
+          subtitle={user.name}
           subtitleStyle={{ color: "#A5A5A5" }}
           activeOpacity={0.9}
           onPress={() =>
@@ -77,6 +113,10 @@ export default class MessagesScreen extends React.Component {
     this.setState({ search: text });
     this.searchUsers(text);
   };
+
+  componentDidMount() {
+    this.getPeople();
+  }
 
   render() {
     return (
@@ -137,7 +177,9 @@ export default class MessagesScreen extends React.Component {
         </View>
 
         <FlatList
-          data={this.state.possible}
+          data={
+            this.state.possible.length ? this.state.possible : this.state.people
+          }
           keyExtractor={(item, index) => index.toString()}
           renderItem={({ item }) => this.renderProfile(item)}
           style={{ flex: 1, backgroundColor: "#FFF" }}
