@@ -67,10 +67,32 @@ export default class OtherProfileScreen extends React.Component {
     }
   };
 
+  checkFollowStatus = async () => {
+    try {
+      let status = await Fire.shared.firestore
+        .collection("users")
+        .doc(Fire.shared.uid)
+        .collection("following")
+        .doc(this.state.user.uid)
+        .get();
+
+      status = status.data();
+
+      if (status === undefined || status === false) {
+        this.setState({ isFollowing: false });
+      } else {
+        this.setState({ isFollowing: true });
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   componentDidMount() {
     this.getPosts();
     this.getFollowers();
     this.getFollowing();
+    this.checkFollowStatus();
   }
 
   componentWillUnmount() {
@@ -78,23 +100,9 @@ export default class OtherProfileScreen extends React.Component {
   }
 
   handleFollowRequest = async () => {
-    const user = this.props.uid || Fire.shared.uid;
+    const thisUser = this.props.uid || Fire.shared.uid;
 
-    await Fire.shared.firestore
-      .collection("users")
-      .doc(this.state.user.uid)
-      .collection("followers")
-      .doc(user)
-      .set({ following: !this.state.isFollowing });
-
-    await Fire.shared.firestore
-      .collection("users")
-      .doc(user)
-      .collection("following")
-      .doc(this.state.user.uid)
-      .set({ following: !this.state.isFollowing });
-
-    this.getPosts();
+    await Fire.shared.followRequest(thisUser, this.state.user.uid, !this.state.isFollowing);
     this.getFollowers();
     this.setState({ isFollowing: !this.state.isFollowing });
   };
@@ -193,11 +201,11 @@ export default class OtherProfileScreen extends React.Component {
             marginTop: 56
           }}
         >
-          <TouchableOpacity style={{ padding: 18 }} onPress={() => this.props.navigation.goBack()}>
-            <SimpleLineIcons
-              name="arrow-left"
-              size={18}
-            ></SimpleLineIcons>
+          <TouchableOpacity
+            style={{ padding: 18 }}
+            onPress={() => this.props.navigation.goBack()}
+          >
+            <SimpleLineIcons name="arrow-left" size={18}></SimpleLineIcons>
           </TouchableOpacity>
 
           <View style={{ flexDirection: "row", alignItems: "center" }}>

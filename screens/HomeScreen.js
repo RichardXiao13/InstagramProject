@@ -13,7 +13,8 @@ import Fire from "../Fire";
 
 export default class HomeScreen extends React.Component {
   state = {
-    posts: []
+    posts: [],
+    isRefreshing: false
   };
 
   getPosts = async () => {
@@ -46,7 +47,7 @@ export default class HomeScreen extends React.Component {
         });
         if (i === followPost.length - 1 && index === following.length - 1) {
           posts.sort((a, b) => b.timestamp - a.timestamp);
-          this.setState({ posts });
+          this.setState({ posts, isRefreshing: false });
         }
       }
     });
@@ -99,30 +100,38 @@ export default class HomeScreen extends React.Component {
             containerStyle={{ marginTop: 12 }}
           ></Image>
 
-          <View style={{ flexDirection: "row", marginTop: 4 }}>
-            <Ionicons
-              name="ios-heart-empty"
-              size={30}
-              color="#2A2A2A"
-              style={{ marginLeft: 14 }}
-            ></Ionicons>
-            <Ionicons
-              name="ios-chatbubbles"
-              size={30}
-              color="#2A2A2A"
-              style={{ marginHorizontal: 18 }}
-            ></Ionicons>
-            <Ionicons
-              name="md-paper-plane"
-              size={30}
-              color="#2A2A2A"
-            ></Ionicons>
-            <FontAwesome
-              name="bookmark-o"
-              size={30}
-              color="#2A2A2A"
-              style={{ marginLeft: "57%" }}
-            ></FontAwesome>
+          <View style={{ flexDirection: "row", marginTop: 4, width: "100%" }}>
+            <TouchableOpacity style={{ marginLeft: 5, paddingHorizontal: 9 }}>
+              <Ionicons
+                name="ios-heart-empty"
+                size={30}
+                color="#2A2A2A"
+              ></Ionicons>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={{ paddingHorizontal: 9 }}>
+              <Ionicons
+                name="ios-chatbubbles"
+                size={30}
+                color="#2A2A2A"
+              ></Ionicons>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={{paddingHorizontal: 9}}>
+              <Ionicons
+                name="md-paper-plane"
+                size={30}
+                color="#2A2A2A"
+              ></Ionicons>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={{ marginLeft: "57%" }}>
+              <FontAwesome
+                name="bookmark-o"
+                size={30}
+                color="#2A2A2A"
+              ></FontAwesome>
+            </TouchableOpacity>
           </View>
 
           <Text style={{ marginHorizontal: 14 }}>
@@ -167,6 +176,11 @@ export default class HomeScreen extends React.Component {
             renderItem={({ item }) => this.renderPost(item)}
             keyExtractor={(item, index) => index.toString()}
             showsVerticalScrollIndicator={false}
+            refreshing={this.state.isRefreshing}
+            onRefresh={() => {
+              this.setState({ isRefreshing: true });
+              this.getPosts();
+            }}
           />
         </View>
       );
@@ -223,6 +237,6 @@ const styles = StyleSheet.create({
   postImage: {
     width: "100%",
     height: 500,
-    marginVertical: 10
+    marginTop: 10
   }
 });
