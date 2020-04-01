@@ -61,7 +61,7 @@ const AppContainer = createStackNavigator(
           }
         },
 
-        Notification: {
+        Notifications: {
           screen: NotificationScreen,
           navigationOptions: {
             tabBarIcon: ({ tintColor }) => (
@@ -95,7 +95,7 @@ const AppContainer = createStackNavigator(
           inactiveTintColor: "#B8BBC4",
           showLabel: false
         },
-        initialRouteName: "Profile"
+        initialRouteName: "Notifications"
       }
     ),
     postModal: {

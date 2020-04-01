@@ -124,6 +124,22 @@ class Fire {
     ]);
   };
 
+  createNotification = (recipientUID, type) => {
+    try {
+      this.firestore
+        .collection("users")
+        .doc(recipientUID)
+        .collection("notifications")
+        .doc(this.timestamp.toString())
+        .set({
+          uid: this.uid,
+          type
+        });
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   sendMessage = async (recipientUID, message) => {
     const user = this.firestore
       .collection("users")
@@ -132,7 +148,6 @@ class Fire {
       .doc(recipientUID);
     try {
       const userData = await user.get();
-      console.log(userData.exists);
       if (userData.exists) {
         await user.update({
           [this.timestamp]: message
@@ -142,6 +157,7 @@ class Fire {
           [this.timestamp]: message
         });
       }
+      this.createNotification(recipientUID, "message");
     } catch (error) {
       console.log(error);
     }
@@ -186,7 +202,10 @@ class Fire {
       } else if (!recipientData) {
         messages = sortMessages(thisUserData, true);
       } else {
-        messages = [...sortMessages(thisUserData, true), ...sortMessages(recipientData, false)];
+        messages = [
+          ...sortMessages(thisUserData, true),
+          ...sortMessages(recipientData, false)
+        ];
         messages.sort((a, b) => b.timestamp - a.timestamp);
       }
 
@@ -194,6 +213,37 @@ class Fire {
     } catch (error) {
       console.log(error);
     }
+  };
+
+  followRequest = async (thisUser, recipient, status) => {
+    const follower = Fire.shared.firestore
+      .collection("users")
+      .doc(recipient)
+      .collection("followers")
+      .doc(thisUser)
+      .set({ following: status });
+
+    const following = Fire.shared.firestore
+      .collection("users")
+      .doc(thisUser)
+      .collection("following")
+      .doc(recipient)
+      .set({ following: status });
+
+    if (status) {
+      this.createNotification(recipient, "follow");
+    }
+
+    await Promise.all([follower, following]);
+  };
+
+  getUser = async uid => {
+    const user = await this.firestore
+      .collection("users")
+      .doc(uid)
+      .get();
+
+    return user.data();
   };
 
   get firestore() {
