@@ -35,11 +35,10 @@ export default class MessageUserScreen extends React.Component {
   }
 
   sendMessage = async () => {
-    await Fire.shared.sendMessage(
-      this.state.user.uid,
-      this.state.currentMessage
-    );
-    
+    const message = this.state.currentMessage;
+    this.setState({ currentMessage: "" });
+    await Fire.shared.sendMessage(this.state.user.uid, message);
+
     await this.userMessages(this.state.user.uid);
   };
 
@@ -74,7 +73,7 @@ export default class MessageUserScreen extends React.Component {
             title="Send"
             titleStyle={{ fontWeight: "500", color: "#3299F3" }}
             buttonStyle={{ paddingHorizontal: 16 }}
-            onPress={this.sendMessage}
+            onPress={() => this.sendMessage()}
           ></Button>
         </View>
       );

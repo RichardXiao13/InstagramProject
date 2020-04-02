@@ -4,7 +4,9 @@ import {
   Text,
   View,
   FlatList,
-  TouchableOpacity
+  TouchableOpacity,
+  Modal,
+  TextInput
 } from "react-native";
 import { Image, Avatar } from "react-native-elements";
 import { Ionicons, FontAwesome, SimpleLineIcons } from "@expo/vector-icons";
@@ -14,7 +16,16 @@ import Fire from "../Fire";
 export default class HomeScreen extends React.Component {
   state = {
     posts: [],
-    isRefreshing: false
+    user: {},
+    isRefreshing: false,
+    modalVisibile: false,
+    comment: "",
+    currentPost: {}
+  };
+
+  getThisUser = async () => {
+    const user = await Fire.shared.getUser(Fire.shared.uid);
+    this.setState({ user });
   };
 
   getPosts = async () => {
@@ -28,36 +39,88 @@ export default class HomeScreen extends React.Component {
     const following = snapshot.docs.map(doc => doc.id);
 
     let posts = [];
-    following.forEach(async (follow, index) => {
-      const snapshot = await Fire.shared.firestore
-        .collection("users")
-        .doc(follow)
-        .collection("posts")
-        .get();
-      const user = await Fire.shared.firestore
-        .collection("users")
-        .doc(follow)
-        .get();
-      const followPost = snapshot.docs.map(doc => doc.data());
-      for (let i = 0; i < followPost.length; i++) {
-        posts.push({
-          ...followPost[i],
+
+    for (const follow of following) {
+      const userRef = Fire.shared.firestore.collection("users").doc(follow);
+      let snapshot = userRef.collection("posts").get();
+      let user = userRef.get();
+
+      [snapshot, user] = await Promise.all([snapshot, user]);
+
+      let followPost = snapshot.docs.map(async doc => {
+        let likes = await userRef
+          .collection("posts")
+          .doc(doc.id)
+          .collection("likes")
+          .doc(Fire.shared.uid)
+          .get();
+        if (likes.exists) {
+          return { ...doc.data(), postId: doc.id, liked: true };
+        } else {
+          return { ...doc.data(), postId: doc.id, liked: false };
+        }
+      });
+
+      followPost = await Promise.all(followPost);
+
+      let userPosts = followPost.map(post => {
+        return {
+          ...post,
           avatar: user.data().avatar,
           username: user.data().username
-        });
-        if (i === followPost.length - 1 && index === following.length - 1) {
-          posts.sort((a, b) => b.timestamp - a.timestamp);
-          this.setState({ posts, isRefreshing: false });
-        }
+        };
+      });
+
+      userPosts = await Promise.all(userPosts);
+
+      userPosts.forEach(post => posts.push(post));
+    }
+
+    posts.sort((a, b) => b.timestamp - a.timestamp);
+    const liked = posts.map(post => post.liked);
+    this.setState({ liked, posts, isRefreshing: false });
+  };
+
+  handleLikePost = async (post, index) => {
+    const thisUser = Fire.shared.uid;
+    const postRef = Fire.shared.firestore
+      .collection("users")
+      .doc(post.uid)
+      .collection("posts")
+      .doc(post.postId)
+      .collection("likes")
+      .doc(thisUser);
+    try {
+      const postData = await postRef.get();
+      const liked = this.state.liked;
+      if (postData.exists) {
+        postRef.delete();
+        liked[index] = false;
+        this.setState({ liked });
+      } else {
+        postRef.set({ [thisUser]: true });
+        liked[index] = true;
+        Fire.shared.createNotification(post.uid, "like");
+        this.setState({ liked });
       }
-    });
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  addComment = async () => {
+    const comment = this.state.comment;
+    this.setState({ comment: "" });
+    await Fire.shared.addComment(this.state.currentPost, comment);
+    
   };
 
   componentDidMount() {
     this.getPosts();
+    this.getThisUser();
   }
 
-  renderPost = post => {
+  renderPost = (post, index) => {
     return (
       <View style={styles.feedItem}>
         <View style={{ flex: 1 }}>
@@ -101,12 +164,19 @@ export default class HomeScreen extends React.Component {
           ></Image>
 
           <View style={{ flexDirection: "row", marginTop: 4, width: "100%" }}>
-            <TouchableOpacity style={{ marginLeft: 5, paddingHorizontal: 9 }}>
-              <Ionicons
-                name="ios-heart-empty"
-                size={30}
-                color="#2A2A2A"
-              ></Ionicons>
+            <TouchableOpacity
+              style={{ marginLeft: 5, paddingHorizontal: 9 }}
+              onPress={() => this.handleLikePost(post, index)}
+            >
+              {post.liked ? (
+                <Ionicons name="ios-heart" size={30} color="#E82560"></Ionicons>
+              ) : (
+                <Ionicons
+                  name="ios-heart-empty"
+                  size={30}
+                  color="#2A2A2A"
+                ></Ionicons>
+              )}
             </TouchableOpacity>
 
             <TouchableOpacity style={{ paddingHorizontal: 9 }}>
@@ -117,7 +187,7 @@ export default class HomeScreen extends React.Component {
               ></Ionicons>
             </TouchableOpacity>
 
-            <TouchableOpacity style={{paddingHorizontal: 9}}>
+            <TouchableOpacity style={{ paddingHorizontal: 9 }}>
               <Ionicons
                 name="md-paper-plane"
                 size={30}
@@ -125,7 +195,7 @@ export default class HomeScreen extends React.Component {
               ></Ionicons>
             </TouchableOpacity>
 
-            <TouchableOpacity style={{ marginLeft: "57%" }}>
+            <TouchableOpacity style={{ marginLeft: "55%" }}>
               <FontAwesome
                 name="bookmark-o"
                 size={30}
@@ -140,6 +210,40 @@ export default class HomeScreen extends React.Component {
             </Text>
             <Text style={styles.post}> {post.text}</Text>
           </Text>
+
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              marginHorizontal: 14,
+              marginVertical: 6
+            }}
+          >
+            <Avatar
+              size={26}
+              source={{ uri: this.state.user.avatar }}
+              rounded
+            />
+
+            <TouchableOpacity
+              onPress={() =>
+                this.setState({
+                  modalVisibile: true,
+                  currentPost: this.state.posts[index]
+                })
+              }
+            >
+              <Text
+                style={{
+                  marginHorizontal: 7,
+                  marginVertical: 8,
+                  color: "#A8A8A8"
+                }}
+              >
+                Add a comment...
+              </Text>
+            </TouchableOpacity>
+          </View>
 
           <Text style={styles.timestamp}>
             {moment(post.timestamp).fromNow()}
@@ -173,8 +277,9 @@ export default class HomeScreen extends React.Component {
 
           <FlatList
             data={this.state.posts}
-            renderItem={({ item }) => this.renderPost(item)}
+            renderItem={({ item, index }) => this.renderPost(item, index)}
             keyExtractor={(item, index) => index.toString()}
+            extraData={this.state.isRefreshing}
             showsVerticalScrollIndicator={false}
             refreshing={this.state.isRefreshing}
             onRefresh={() => {
@@ -182,10 +287,65 @@ export default class HomeScreen extends React.Component {
               this.getPosts();
             }}
           />
+
+          <Modal
+            visible={this.state.modalVisibile}
+            style={styles.modal}
+            transparent
+            animationType="slide"
+          >
+            <TouchableOpacity
+              style={{ flex: 1 }}
+              onPress={() => this.setState({ modalVisibile: false })}
+            ></TouchableOpacity>
+            <View
+              style={{ flex: 1, backgroundColor: "#FFF", paddingBottom: 20 }}
+            >
+              <View
+                style={{
+                  flex: 1,
+                  flexDirection: "row",
+                  marginTop: 20,
+                  alignItems: "flex-start"
+                }}
+              >
+                <Avatar
+                  size={48}
+                  source={{ uri: this.state.user.avatar }}
+                  rounded
+                  containerStyle={{ marginLeft: 16, marginRight: 8 }}
+                />
+                <View style={styles.comment}>
+                  <TextInput
+                    placeholder="Add a comment..."
+                    autoFocus
+                    style={{ paddingLeft: 14 }}
+                    onChangeText={comment => this.setState({ comment })}
+                    value={this.state.comment}
+                  ></TextInput>
+
+                  <TouchableOpacity
+                    style={{ padding: 8 }}
+                    onPress={() => this.addComment()}
+                  >
+                    <Text
+                      style={
+                        this.state.comment
+                          ? { color: "#3299F3", fontWeight: "500" }
+                          : { color: "#bbe2fb", fontWeight: "500" }
+                      }
+                    >
+                      Post
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </Modal>
         </View>
       );
     } else {
-      return <View></View>;
+      return null;
     }
   }
 }
@@ -224,12 +384,12 @@ const styles = StyleSheet.create({
   timestamp: {
     fontSize: 11,
     color: "#A8A8A8",
-    marginVertical: 8,
+    marginBottom: 8,
     marginHorizontal: 14
   },
 
   post: {
-    marginTop: 6,
+    marginVertical: 6,
     fontSize: 14,
     color: "#3F3F3F"
   },
@@ -238,5 +398,24 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 500,
     marginTop: 10
+  },
+
+  modal: {
+    flex: 1,
+    width: "100%",
+    justifyContent: "flex-start",
+    alignItems: "center"
+  },
+
+  comment: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    borderWidth: 1,
+    borderRadius: 30,
+    borderColor: "#E0E0E0",
+    paddingVertical: 6,
+    width: "76%",
+    height: 50
   }
 });

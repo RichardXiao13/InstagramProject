@@ -163,6 +163,31 @@ class Fire {
     }
   };
 
+  addComment = async (post, comment) => {
+    const commentRef = this.firestore
+      .collection("users")
+      .doc(post.uid)
+      .collection("posts")
+      .doc(post.postId)
+      .collection("comments")
+      .doc(this.timestamp.toString());
+    try {
+      const userComments = await commentRef.get();
+      if (userComments.exists) {
+        commentRef.update({
+          [this.uid]: comment
+        });
+      } else {
+        commentRef.set({
+          [this.uid]: comment
+        });
+      }
+      this.createNotification(post.uid, "comment");
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   getMessages = async recipientUID => {
     const user = this.firestore
       .collection("users")
