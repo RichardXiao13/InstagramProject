@@ -12,6 +12,7 @@ import PasswordScreen from "./screens/PasswordScreen";
 import HomeScreen from "./screens/HomeScreen";
 import MessagesScreen from "./screens/MessagesScreen";
 import MessageUserScreen from "./screens/MessageUserScreen";
+import CommentsScreen from "./screens/CommentsScreen";
 
 import SearchScreen from "./screens/SearchScreen";
 import NotificationScreen from "./screens/NotificationScreen";
@@ -95,7 +96,7 @@ const AppContainer = createStackNavigator(
           inactiveTintColor: "#B8BBC4",
           showLabel: false
         },
-        initialRouteName: "Notifications"
+        initialRouteName: "Home"
       }
     ),
     postModal: {
@@ -142,6 +143,13 @@ const AppContainer = createStackNavigator(
 
     messageUser: {
       screen: MessageUserScreen,
+      navigationOptions: {
+        gestureEnabled: false
+      }
+    },
+
+    comments: {
+      screen: CommentsScreen,
       navigationOptions: {
         gestureEnabled: false
       }

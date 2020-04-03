@@ -125,18 +125,20 @@ class Fire {
   };
 
   createNotification = (recipientUID, type) => {
-    try {
-      this.firestore
-        .collection("users")
-        .doc(recipientUID)
-        .collection("notifications")
-        .doc(this.timestamp.toString())
-        .set({
-          uid: this.uid,
-          type
-        });
-    } catch (error) {
-      console.log(error);
+    if (recipientUID != this.uid) {
+      try {
+        this.firestore
+          .collection("users")
+          .doc(recipientUID)
+          .collection("notifications")
+          .doc(this.timestamp.toString())
+          .set({
+            uid: this.uid,
+            type
+          });
+      } catch (error) {
+        console.log(error);
+      }
     }
   };
 
@@ -175,11 +177,13 @@ class Fire {
       const userComments = await commentRef.get();
       if (userComments.exists) {
         commentRef.update({
-          [this.uid]: comment
+          comment,
+          user: this.uid
         });
       } else {
         commentRef.set({
-          [this.uid]: comment
+          comment,
+          user: this.uid
         });
       }
       this.createNotification(post.uid, "comment");

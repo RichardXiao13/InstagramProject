@@ -36,7 +36,7 @@ export default class LoginScreen extends React.Component {
 
         <Image
           source={require("../assets/authHeader.png")}
-          style={{ width: "100%", height: 200 }}
+          style={{ width: "100%", height: 170 }}
         ></Image>
 
         <Image
@@ -45,7 +45,7 @@ export default class LoginScreen extends React.Component {
             width: "100%",
             height: 200,
             position: "absolute",
-            bottom: -75
+            bottom: -60
           }}
         ></Image>
 

@@ -31,8 +31,6 @@ export default class ProfileScreen extends React.Component {
     isRefreshing: false
   };
 
-  unsubscribeUser = null;
-
   getPosts = async () => {
     try {
       const user = this.props.uid || Fire.shared.uid;
@@ -42,9 +40,14 @@ export default class ProfileScreen extends React.Component {
         .collection("posts")
         .get();
 
+      const userData = await Fire.shared.getUser(user);
+
       this.setState({
+        user: userData,
         posts: snapshot.docs
-          .map(doc => doc.data())
+          .map(doc => {
+            return { ...doc.data(), postId: doc.id, avatar: userData.avatar };
+          })
           .sort((a, b) => b.timestamp - a.timestamp)
       });
     } catch (error) {
@@ -97,17 +100,6 @@ export default class ProfileScreen extends React.Component {
     const user = this.props.uid || Fire.shared.uid;
 
     this.getInfo();
-
-    this.unsubscribeUser = Fire.shared.firestore
-      .collection("users")
-      .doc(user)
-      .onSnapshot(doc => {
-        this.setState({ user: doc.data() });
-      });
-  }
-
-  componentWillUnmount() {
-    this.unsubscribeUser();
   }
 
   renderPost = post => {
@@ -473,6 +465,7 @@ export default class ProfileScreen extends React.Component {
                   alignItems: "center",
                   paddingBottom: 40
                 }}
+                onPress={() => Fire.shared.signOutUser()}
               >
                 <AntDesign
                   name="plus"
@@ -488,7 +481,7 @@ export default class ProfileScreen extends React.Component {
         </View>
       );
     } else {
-      return <View></View>;
+      return null;
     }
   }
 }
