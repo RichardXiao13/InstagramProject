@@ -32,7 +32,7 @@ export default class RegisterScreen extends React.Component {
 
         <Image
           source={require("../assets/authHeader.png")}
-          style={{ width: "100%", height: 200 }}
+          style={{ width: "100%", height: 140 }}
         ></Image>
 
         <Image
@@ -41,7 +41,7 @@ export default class RegisterScreen extends React.Component {
             width: "100%",
             height: 200,
             position: "absolute",
-            bottom: -75
+            bottom: -60
           }}
         ></Image>
 
@@ -129,7 +129,6 @@ const styles = StyleSheet.create({
   },
 
   greeting: {
-    marginTop: 32,
     fontSize: 18,
     fontWeight: "400",
     textAlign: "center"

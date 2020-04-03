@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, FlatList } from "react-native";
 import MessageNotification from "../components/MessageNotification";
 import FollowNotification from "../components/FollowNotification";
 import LikeNotification from "../components/LikeNotification";
+import CommentNotification from "../components/CommentNotification";
 import Fire from "../Fire";
 
 export default class NotificationScreen extends React.Component {
@@ -41,6 +42,8 @@ export default class NotificationScreen extends React.Component {
       return <FollowNotification user={notification} />;
     } else if (notification.type === "like") {
       return <LikeNotification user={notification} />;
+    } else if (notification.type === "comment") {
+      return <CommentNotification user={notification} />;
     }
   };
 

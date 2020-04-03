@@ -18,7 +18,7 @@ export default class HomeScreen extends React.Component {
     posts: [],
     user: {},
     isRefreshing: false,
-    modalVisibile: false,
+    modalVisible: false,
     comment: "",
     currentPost: {}
   };
@@ -110,9 +110,8 @@ export default class HomeScreen extends React.Component {
 
   addComment = async () => {
     const comment = this.state.comment;
-    this.setState({ comment: "" });
+    this.setState({ comment: "", modalVisible: false });
     await Fire.shared.addComment(this.state.currentPost, comment);
-    
   };
 
   componentDidMount() {
@@ -158,9 +157,8 @@ export default class HomeScreen extends React.Component {
 
           <Image
             source={{ uri: post.image }}
-            style={styles.postImage}
             resizeMode="cover"
-            containerStyle={{ marginTop: 12 }}
+            containerStyle={styles.postImage}
           ></Image>
 
           <View style={{ flexDirection: "row", marginTop: 4, width: "100%" }}>
@@ -179,7 +177,14 @@ export default class HomeScreen extends React.Component {
               )}
             </TouchableOpacity>
 
-            <TouchableOpacity style={{ paddingHorizontal: 9 }}>
+            <TouchableOpacity
+              style={{ paddingHorizontal: 9 }}
+              onPress={() =>
+                this.props.navigation.navigate("comments", {
+                  post
+                })
+              }
+            >
               <Ionicons
                 name="ios-chatbubbles"
                 size={30}
@@ -187,7 +192,10 @@ export default class HomeScreen extends React.Component {
               ></Ionicons>
             </TouchableOpacity>
 
-            <TouchableOpacity style={{ paddingHorizontal: 9 }}>
+            <TouchableOpacity
+              style={{ paddingHorizontal: 9 }}
+              onPress={() => this.props.navigation.navigate("messages")}
+            >
               <Ionicons
                 name="md-paper-plane"
                 size={30}
@@ -211,6 +219,18 @@ export default class HomeScreen extends React.Component {
             <Text style={styles.post}> {post.text}</Text>
           </Text>
 
+          <TouchableOpacity
+            onPress={() =>
+              this.props.navigation.navigate("comments", {
+                post
+              })
+            }
+          >
+            <Text style={{ ...styles.subtitle, marginHorizontal: 14 }}>
+              View comments
+            </Text>
+          </TouchableOpacity>
+
           <View
             style={{
               flexDirection: "row",
@@ -228,20 +248,12 @@ export default class HomeScreen extends React.Component {
             <TouchableOpacity
               onPress={() =>
                 this.setState({
-                  modalVisibile: true,
+                  modalVisible: true,
                   currentPost: this.state.posts[index]
                 })
               }
             >
-              <Text
-                style={{
-                  marginHorizontal: 7,
-                  marginVertical: 8,
-                  color: "#A8A8A8"
-                }}
-              >
-                Add a comment...
-              </Text>
+              <Text style={styles.subtitle}>Add a comment...</Text>
             </TouchableOpacity>
           </View>
 
@@ -260,6 +272,7 @@ export default class HomeScreen extends React.Component {
           <View style={styles.header}>
             <TouchableOpacity
               style={{ paddingHorizontal: 14, paddingVertical: 8 }}
+              onPress={() => this.props.navigation.navigate("postModal")}
             >
               <SimpleLineIcons name="camera" size={26}></SimpleLineIcons>
             </TouchableOpacity>
@@ -279,7 +292,6 @@ export default class HomeScreen extends React.Component {
             data={this.state.posts}
             renderItem={({ item, index }) => this.renderPost(item, index)}
             keyExtractor={(item, index) => index.toString()}
-            extraData={this.state.isRefreshing}
             showsVerticalScrollIndicator={false}
             refreshing={this.state.isRefreshing}
             onRefresh={() => {
@@ -289,14 +301,14 @@ export default class HomeScreen extends React.Component {
           />
 
           <Modal
-            visible={this.state.modalVisibile}
+            visible={this.state.modalVisible}
             style={styles.modal}
             transparent
             animationType="slide"
           >
             <TouchableOpacity
               style={{ flex: 1 }}
-              onPress={() => this.setState({ modalVisibile: false })}
+              onPress={() => this.setState({ modalVisible: false, comment: "" })}
             ></TouchableOpacity>
             <View
               style={{ flex: 1, backgroundColor: "#FFF", paddingBottom: 20 }}
@@ -395,9 +407,10 @@ const styles = StyleSheet.create({
   },
 
   postImage: {
+    marginTop: 10,
     width: "100%",
-    height: 500,
-    marginTop: 10
+    aspectRatio: 1,
+    marginBottom: 10
   },
 
   modal: {
@@ -417,5 +430,11 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     width: "76%",
     height: 50
+  },
+
+  subtitle: {
+    marginHorizontal: 7,
+    marginVertical: 8,
+    color: "#A8A8A8"
   }
 });

@@ -102,7 +102,11 @@ export default class OtherProfileScreen extends React.Component {
   handleFollowRequest = async () => {
     const thisUser = this.props.uid || Fire.shared.uid;
 
-    await Fire.shared.followRequest(thisUser, this.state.user.uid, !this.state.isFollowing);
+    await Fire.shared.followRequest(
+      thisUser,
+      this.state.user.uid,
+      !this.state.isFollowing
+    );
     this.getFollowers();
     this.setState({ isFollowing: !this.state.isFollowing });
   };
@@ -317,7 +321,14 @@ export default class OtherProfileScreen extends React.Component {
             </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.button}>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={() =>
+              this.props.navigation.navigate("messageUser", {
+                user: this.state.user
+              })
+            }
+          >
             <Text style={{ textAlign: "center", fontWeight: "600" }}>
               Message
             </Text>
