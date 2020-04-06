@@ -95,7 +95,6 @@ export default class RegisterScreen extends React.Component {
               style={styles.input}
               secureTextEntry
               autoCapitalize="none"
-              // onFocus={() => this.props.navigation.navigate("Password")}
               onChangeText={password =>
                 this.setState({ user: { ...this.state.user, password } })
               }
