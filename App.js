@@ -7,7 +7,6 @@ import { Ionicons, Foundation, FontAwesome } from "@expo/vector-icons";
 import LoadingScreen from "./screens/LoadingScreen";
 import LoginScreen from "./screens/LoginScreen";
 import RegisterScreen from "./screens/RegisterScreen";
-import PasswordScreen from "./screens/PasswordScreen";
 
 import HomeScreen from "./screens/HomeScreen";
 import MessagesScreen from "./screens/MessagesScreen";
@@ -164,8 +163,7 @@ const AppContainer = createStackNavigator(
 const AuthStack = createStackNavigator(
   {
     Login: LoginScreen,
-    Register: RegisterScreen,
-    Password: PasswordScreen
+    Register: RegisterScreen
   },
   {
     headerMode: "none"

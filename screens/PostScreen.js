@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   Image,
   TextInput,
-  Switch
+  Switch,
 } from "react-native";
 import { SimpleLineIcons } from "@expo/vector-icons";
 import Fire from "../Fire";
@@ -16,11 +16,11 @@ import UserPermissions from "../utilities/UserPermissions";
 export default class PostScreen extends React.Component {
   state = {
     text: "",
-    image: undefined,
+    image: require("../assets/tempAvatar.png"),
     placeholder: 0,
     facebook: false,
     twitter: false,
-    tumblr: false
+    tumblr: false,
   };
 
   componentDidMount() {
@@ -32,11 +32,14 @@ export default class PostScreen extends React.Component {
     if (this.state.image) {
       Fire.shared
         .addPost({ text: this.state.text.trim(), localUri: this.state.image })
-        .then(reference => {
-          this.setState({ text: "", image: undefined });
+        .then((reference) => {
+          this.setState({
+            text: "",
+            image: require("../assets/tempAvatar.png"),
+          });
           this.props.navigation.goBack();
         })
-        .catch(error => {
+        .catch((error) => {
           alert(error);
         });
     }
@@ -46,7 +49,7 @@ export default class PostScreen extends React.Component {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
-      aspect: [4, 4]
+      aspect: [4, 4],
     });
 
     if (!result.cancelled) {
@@ -85,7 +88,7 @@ export default class PostScreen extends React.Component {
                       fontWeight: "500",
                       marginBottom: 36,
                       marginLeft: 16,
-                      width: "100%"
+                      width: "100%",
                     }
                   : {
                       fontSize: 16,
@@ -93,10 +96,10 @@ export default class PostScreen extends React.Component {
                       color: "#000",
                       marginBottom: 36,
                       marginLeft: 16,
-                      width: "100%"
+                      width: "100%",
                     }
               }
-              onChangeText={caption =>
+              onChangeText={(caption) =>
                 this.setState({ text: caption, placeholder: caption.length })
               }
               value={this.state.text}
@@ -159,7 +162,7 @@ export default class PostScreen extends React.Component {
                 flexDirection: "row",
                 alignItems: "center",
                 marginLeft: 18,
-                marginTop: 8
+                marginTop: 8,
               }}
             >
               <Text style={{ fontSize: 12, color: "#B8BBC4" }}>
@@ -180,7 +183,7 @@ export default class PostScreen extends React.Component {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1
+    flex: 1,
   },
 
   header: {
@@ -191,19 +194,19 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     borderBottomWidth: StyleSheet.hairlineWidth * 2,
     borderBottomColor: "#E0E0E0",
-    paddingHorizontal: 14
+    paddingHorizontal: 14,
   },
 
   title: {
     fontSize: 18,
-    fontWeight: "600"
+    fontWeight: "600",
   },
 
   captionContainer: {
     height: "10%",
     flexDirection: "row",
     marginHorizontal: 18,
-    marginVertical: 16
+    marginVertical: 16,
   },
 
   tag: {
@@ -215,7 +218,7 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth * 3,
     borderTopColor: "#E0E0E0",
     borderBottomWidth: StyleSheet.hairlineWidth * 3,
-    borderBottomColor: "#E0E0E0"
+    borderBottomColor: "#E0E0E0",
   },
 
   location: {
@@ -224,29 +227,29 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 18,
     borderBottomWidth: StyleSheet.hairlineWidth * 3,
-    borderBottomColor: "#E0E0E0"
+    borderBottomColor: "#E0E0E0",
   },
 
   mediaContainer: {
     flex: 1,
     justifyContent: "center",
     borderBottomWidth: StyleSheet.hairlineWidth * 3,
-    borderBottomColor: "#E0E0E0"
+    borderBottomColor: "#E0E0E0",
   },
 
   media: {
     fontSize: 16,
     marginLeft: 18,
-    marginVertical: 16
+    marginVertical: 16,
   },
 
   mediaRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center"
+    alignItems: "center",
   },
 
   switch: {
-    marginRight: 18
-  }
+    marginRight: 18,
+  },
 });
